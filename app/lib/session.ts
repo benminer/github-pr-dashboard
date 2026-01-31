@@ -1,5 +1,5 @@
-// Cookie-based session management for Cloudflare Workers
-// No Node.js crypto - uses Web Crypto API
+// Cookie-based session management
+// Uses base64 encoding (btoa/atob) for simplicity
 
 const SESSION_COOKIE = "gh_session";
 

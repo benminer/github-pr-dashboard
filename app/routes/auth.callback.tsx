@@ -2,8 +2,7 @@ import type { Route } from "./+types/auth.callback";
 import { redirect } from "react-router";
 import { setSessionCookie } from "../lib/session";
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const env = context.cloudflare.env as any;
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
 
@@ -19,8 +18,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       Accept: "application/json",
     },
     body: JSON.stringify({
-      client_id: env.GITHUB_CLIENT_ID,
-      client_secret: env.GITHUB_CLIENT_SECRET,
+      client_id: process.env.GITHUB_CLIENT_ID,
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
       code,
     }),
   });

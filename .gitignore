@@ -2,5 +2,5 @@ node_modules
 .dev.vars
 /.cache
 /build
-.wrangler
 .react-router
+.ampt

@@ -1,3 +1,5 @@
+# These should be set as Ampt params via the dashboard or CLI
+# ampt params set GITHUB_CLIENT_ID your_client_id_here
+# ampt params set GITHUB_CLIENT_SECRET your_client_secret_here --secret
 GITHUB_CLIENT_ID=your_client_id_here
 GITHUB_CLIENT_SECRET=your_client_secret_here
-SESSION_SECRET=some_random_secret_string
