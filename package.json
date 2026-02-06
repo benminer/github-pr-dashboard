@@ -33,6 +33,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "ampt": {
-    "org": "benminer"
+    "org": "benminer",
+    "app": "github-pr-dashboard"
   }
 }
