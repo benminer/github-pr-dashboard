@@ -1,66 +1,39 @@
 # GitHub PR Dashboard
 
-A clean, minimal dashboard showing all your open pull requests across repos and orgs. Built with React Router (Remix) on Cloudflare Workers.
+A dashboard to view all your open pull requests in one place. Built with React Router v7, Tailwind CSS, and deployed on [Ampt](https://getampt.com).
 
 ## Setup
 
-### 1. Install dependencies
+1. Install dependencies:
+   ```sh
+   npm install
+   ```
 
-```bash
-npm install
-```
+2. Set Ampt params (via CLI or dashboard):
+   ```sh
+   ampt params set GITHUB_CLIENT_ID <your-client-id>
+   ampt params set GITHUB_CLIENT_SECRET <your-client-secret> --secret
+   ```
 
-### 2. Create a GitHub OAuth App
+3. Start development:
+   ```sh
+   ampt  # starts interactive shell + sandbox
+   ```
 
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Click **New OAuth App**
-3. Set:
-   - **Application name:** PR Dashboard
-   - **Homepage URL:** `http://localhost:5173`
-   - **Authorization callback URL:** `http://localhost:5173/auth/callback`
-4. Copy the **Client ID** and generate a **Client Secret**
+4. Deploy:
+   ```sh
+   # Inside the ampt interactive shell:
+   deploy prod
+   ```
 
-### 3. Configure environment variables
+## GitHub OAuth
 
-Copy `.dev.vars.example` to `.dev.vars` and fill in your values:
+Create a GitHub OAuth App at https://github.com/settings/developers with:
+- **Homepage URL**: Your Ampt app URL
+- **Callback URL**: `https://<your-ampt-url>/auth/callback`
 
-```bash
-cp .dev.vars.example .dev.vars
-```
+## Architecture
 
-```
-GITHUB_CLIENT_ID=your_client_id
-GITHUB_CLIENT_SECRET=your_client_secret
-SESSION_SECRET=any_random_string
-```
-
-### 4. Run locally
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-## Deploy to Cloudflare
-
-```bash
-# Set secrets
-wrangler secret put GITHUB_CLIENT_ID
-wrangler secret put GITHUB_CLIENT_SECRET
-wrangler secret put SESSION_SECRET
-
-# Deploy
-npm run deploy
-```
-
-Update your GitHub OAuth App's callback URL to your production URL (`https://your-app.workers.dev/auth/callback`).
-
-## Features
-
-- GitHub OAuth login
-- Shows all open PRs you're involved in (owned repos + org repos)
-- Displays: title, repo, author, CI status, review status, timestamps
-- Server-side rendering via React Router loaders
-- Cloudflare Workers compatible (no Node.js APIs)
-- Tailwind CSS styling
+- **server.mjs** — Ampt entry point using Express + `@ampt/sdk`
+- **app/** — React Router v7 routes and components
+- **build/** — Generated client + server bundles (via `react-router build`)
