@@ -1,5 +1,0 @@
-# Ampt configuration
-# Specify Node.js 22 to support Vite 7.x (requires crypto.hash API)
-
-[build]
-node = "22"
