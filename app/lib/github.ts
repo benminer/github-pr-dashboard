@@ -12,6 +12,7 @@ export interface PullRequest {
   reviewDecision: string; // "APPROVED" | "CHANGES_REQUESTED" | "REVIEW_REQUIRED" | ""
   isDraft: boolean;
   number: number;
+  branch: string;
 }
 
 const SEARCH_QUERY = `
@@ -24,6 +25,7 @@ query($query: String!, $cursor: String) {
         url
         number
         isDraft
+        headRefName
         createdAt
         updatedAt
         author { login avatarUrl }
@@ -95,6 +97,7 @@ export async function fetchOpenPRs(accessToken: string): Promise<PullRequest[]> 
           statusState: statusNode?.state?.toLowerCase() || "none",
           reviewDecision: node.reviewDecision || "",
           isDraft: node.isDraft,
+          branch: node.headRefName || "unknown",
         });
       }
 
