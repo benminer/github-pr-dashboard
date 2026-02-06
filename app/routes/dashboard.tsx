@@ -78,7 +78,18 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMode, setSortMode] = useState<"activity" | "org">("activity");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [selectedOrg, setSelectedOrg] = useState<string>("all");
   const [toast, setToast] = useState<string | null>(null);
+
+  // Extract unique organizations from PRs
+  const organizations = useMemo(() => {
+    const orgs = new Set<string>();
+    prs.forEach((pr) => {
+      const org = pr.repoName.split("/")[0];
+      orgs.add(org);
+    });
+    return Array.from(orgs).sort();
+  }, [prs]);
 
   // Load preferences from localStorage on mount
   useEffect(() => {
@@ -117,17 +128,28 @@ export default function Dashboard() {
     setToast(`Copied: ${branch}`);
   };
 
-  // Filter PRs by search query
+  // Filter PRs by search query and organization
   const filteredPRs = useMemo(() => {
-    if (!searchQuery.trim()) return prs;
-    const q = searchQuery.toLowerCase();
-    return prs.filter(
-      (pr) =>
-        pr.title.toLowerCase().includes(q) ||
-        pr.repoName.toLowerCase().includes(q) ||
-        pr.author.toLowerCase().includes(q)
-    );
-  }, [prs, searchQuery]);
+    let filtered = prs;
+
+    // Filter by organization
+    if (selectedOrg !== "all") {
+      filtered = filtered.filter((pr) => pr.repoName.startsWith(`${selectedOrg}/`));
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (pr) =>
+          pr.title.toLowerCase().includes(q) ||
+          pr.repoName.toLowerCase().includes(q) ||
+          pr.author.toLowerCase().includes(q)
+      );
+    }
+
+    return filtered;
+  }, [prs, searchQuery, selectedOrg]);
 
   // Sort filtered PRs
   const sortedPRs = useMemo(() => {
@@ -207,10 +229,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Sort controls */}
+        {/* Filter and Sort controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-lg text-gray-300">
-            {searchQuery ? (
+            {searchQuery || selectedOrg !== "all" ? (
               <>
                 {sortedPRs.length} of {prs.length} PR{prs.length !== 1 ? "s" : ""}
               </>
@@ -221,8 +243,28 @@ export default function Dashboard() {
             )}
           </h2>
 
-          <div className="flex items-center gap-3 text-sm">
-            <span className="text-gray-500">Sort by:</span>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            {/* Organization filter */}
+            {organizations.length > 1 && (
+              <>
+                <span className="text-gray-500">Org:</span>
+                <select
+                  value={selectedOrg}
+                  onChange={(e) => setSelectedOrg(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg focus:outline-none focus:border-gray-600 transition"
+                >
+                  <option value="all">All Organizations</option>
+                  {organizations.map((org) => (
+                    <option key={org} value={org}>
+                      {org}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
+
+            {/* Sort controls */}
+            <span className="text-gray-500">Sort:</span>
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as "activity" | "org")}
@@ -249,47 +291,61 @@ export default function Dashboard() {
           </p>
         )}
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sortedPRs.map((pr) => (
             <a
               key={pr.url}
               href={pr.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition"
+              className="block bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition h-full flex flex-col"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs text-gray-500 font-mono">{pr.repoName}</span>
-                    <span className="text-xs text-gray-700">#{pr.number}</span>
+              <div className="flex flex-col h-full">
+                {/* Header: repo, number, badges */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                    <span className="text-xs text-gray-500 font-mono truncate">{pr.repoName}</span>
+                    <span className="text-xs text-gray-700 shrink-0">#{pr.number}</span>
                     {pr.isDraft && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700">
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700 shrink-0">
                         Draft
                       </span>
                     )}
-                    <button
-                      onClick={(e) => copyBranch(pr.branch, e)}
-                      className="text-xs text-gray-600 hover:text-white transition flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-gray-800"
-                      title="Copy branch name"
-                    >
-                      <span className="font-mono">{pr.branch}</span>
-                      <span>📋</span>
-                    </button>
-                  </div>
-                  <h3 className="text-white font-medium">{pr.title}</h3>
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      {pr.authorAvatar && (
-                        <img src={pr.authorAvatar} alt="" className="w-4 h-4 rounded-full" />
-                      )}
-                      <span className="text-xs text-gray-400">{pr.author}</span>
-                    </div>
-                    <span className="text-xs text-gray-600">opened {timeAgo(pr.createdAt)}</span>
-                    <span className="text-xs text-gray-600">updated {timeAgo(pr.updatedAt)}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
+
+                {/* Title */}
+                <h3 className="text-white font-medium mb-3 line-clamp-2 flex-1">{pr.title}</h3>
+
+                {/* Branch copy button */}
+                <div className="mb-3">
+                  <button
+                    onClick={(e) => copyBranch(pr.branch, e)}
+                    className="text-xs text-gray-600 hover:text-white transition flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800 max-w-full"
+                    title="Copy branch name"
+                  >
+                    <span className="font-mono truncate">{pr.branch}</span>
+                    <span className="shrink-0">📋</span>
+                  </button>
+                </div>
+
+                {/* Author and timestamps */}
+                <div className="flex flex-col gap-1.5 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    {pr.authorAvatar && (
+                      <img src={pr.authorAvatar} alt="" className="w-4 h-4 rounded-full" />
+                    )}
+                    <span className="text-xs text-gray-400">{pr.author}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <span>opened {timeAgo(pr.createdAt)}</span>
+                    <span>•</span>
+                    <span>updated {timeAgo(pr.updatedAt)}</span>
+                  </div>
+                </div>
+
+                {/* Status badges */}
+                <div className="flex flex-wrap items-center gap-2 mt-auto">
                   <StatusBadge state={pr.statusState} />
                   <ReviewBadge decision={pr.reviewDecision} />
                 </div>
